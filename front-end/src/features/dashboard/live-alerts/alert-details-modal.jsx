@@ -25,7 +25,7 @@ export default function AlertDetailsModal({ alert, onClose, onVerify, onResolve,
 
   return (
     <Dialog open={!!alert} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto  z-[9999]">
         <DialogHeader>
           <div className="flex items-center justify-between pr-6">
             <div>
@@ -98,9 +98,7 @@ export default function AlertDetailsModal({ alert, onClose, onVerify, onResolve,
                 <p className="text-xs text-muted-foreground mt-1">Quezon City, Metro Manila</p>
               </CardContent>
             </Card>
-            <div className="bg-muted rounded-lg h-48 flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">Map Preview (Google Maps Integration)</p>
-            </div>
+            
           </div>
 
           {/* Crash Data */}

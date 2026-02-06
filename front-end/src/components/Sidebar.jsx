@@ -33,7 +33,7 @@ const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const renderMenu = (items, level = 0) => {

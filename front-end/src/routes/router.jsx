@@ -8,11 +8,16 @@ import Logs from '@/pages/Logs';
 import Settings from '@/pages/Settings';
 import Users from '@/pages/Users';
 import Alerts from '@/pages/Alerts';
+import Register from '@/pages/Register';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <Login />,
+  },
+   {
+    path: '/register',
+    element: <Register />,
   },
   {
     element: <ProtectedRoute />,

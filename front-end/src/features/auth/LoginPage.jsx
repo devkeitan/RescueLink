@@ -3,37 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Mail, Lock } from 'lucide-react';
+import { ShieldAlert, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
-    // Replace with actual API call
-    if (email && password) {
-      login({ email, name: email.split('@')[0] });
+    try {
+      await login(email, password);
       navigate('/dashboard');
-    } else {
-      setError('Please enter valid credentials');
+    } catch (err) {
+      setError(err || 'Invalid email or password. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex w-full items-center justify-center min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50">
-     
-     
-
       <div className="relative w-full max-w-md mx-4">
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Red Header Section */}
           <div className="bg-gradient-to-r from-red-600 to-red-500 p-8 text-white text-center">
             <div className="flex justify-center mb-4">
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-full">
@@ -44,7 +42,6 @@ export default function LoginPage() {
             <p className="text-red-100 text-sm">Emergency Response System</p>
           </div>
 
-          {/* Form Section */}
           <div className="p-8">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
@@ -72,6 +69,7 @@ export default function LoginPage() {
                     placeholder="mail@gmail.com"
                     className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -89,6 +87,7 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -98,6 +97,7 @@ export default function LoginPage() {
                   <input 
                     type="checkbox" 
                     className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    disabled={loading}
                   />
                   <span className="text-gray-600">Remember me</span>
                 </label>
@@ -109,12 +109,26 @@ export default function LoginPage() {
               <Button 
                 type="submit" 
                 className="w-full h-12 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold shadow-lg shadow-red-500/30 transition-all"
+                disabled={loading}
               >
-                Sign In
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
-            </form>
 
-            {/* Emergency Notice */}
+            
+            </form>
+ <a
+                href="/register"
+                className="text-red-600 font-semibold hover:text-red-700"
+              >
+                Sign in
+              </a>
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <ShieldAlert className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -129,7 +143,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="text-center mt-6 text-sm text-gray-600">
           <p>© 2026 RescueLink. All rights reserved.</p>
         </footer>

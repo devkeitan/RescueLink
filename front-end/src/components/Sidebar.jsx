@@ -2,18 +2,19 @@ import { useState } from "react";
 import {
   Home, Users, Palmtree, Briefcase, CardSim, UserCog,
   X, ChevronDown, ChevronsLeft, ChevronsRight, ShieldCheck,
-  Printer, Map, SettingsIcon, AlertTriangle, LogOut
+  Printer, Map, SettingsIcon, AlertTriangle, LogOut,
+  Ambulance
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
-import { Button } from '@/components/ui/button';
 
 const sidebarItems = [
   { path: "/dashboard", label: "Dashboard", icon: Home },
   { path: "/map", label: "Live Map", icon: Map },
   { path: "/alerts", label: "Alerts", icon: AlertTriangle },
   { path: "/users", label: "User Management", icon: UserCog },
+  {path: "/vehicles", label: "Vehicle Management", icon: Ambulance },
   { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];

@@ -16,15 +16,29 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
+      console.log('Checking authentication...'); // Debug
+      
       if (authAPI.isAuthenticated()) {
-        const userData = await authAPI.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
-      } else {
-        const storedUser = authAPI.getStoredUser();
-        if (storedUser) {
-          setUser(storedUser);
+        console.log('Token found, fetching user...'); // Debug
+        
+        try {
+          const userData = await authAPI.getCurrentUser();
+          setUser(userData);
+          setIsAuthenticated(true);
+          console.log('User authenticated:', userData); // Debug
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          // If API call fails, use stored user
+          const storedUser = authAPI.getStoredUser();
+          if (storedUser) {
+            setUser(storedUser);
+            setIsAuthenticated(true);
+            console.log('Using stored user:', storedUser); // Debug
+          }
         }
+      } else {
+        console.log('No token found'); // Debug
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -37,10 +51,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login(email, password);
+      console.log('Login successful:', response); // Debug
       setUser(response.user);
       setIsAuthenticated(true);
       return response;
     } catch (error) {
+      console.error('Login failed:', error);
       throw error;
     }
   };
@@ -57,6 +73,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authAPI.logout();
+      console.log('Logged out'); // Debug
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

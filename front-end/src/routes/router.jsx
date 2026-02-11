@@ -9,6 +9,7 @@ import Settings from '@/pages/Settings';
 import Users from '@/pages/Users';
 import Alerts from '@/pages/Alerts';
 import Register from '@/pages/Register';
+import Vehicles from '@/pages/Vehicles';
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <Dashboard /> },
           { path: '/map', element: <LiveMap /> },
           { path: '/users', element: <Users /> },
+          {path: '/vehicles', element: <Vehicles /> },
           { path: '/settings', element: <Settings /> },
           { path: '/logs', element: <Logs /> },
           { path: '/alerts', element: <Alerts /> }

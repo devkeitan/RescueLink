@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userPhone, setUserPhone] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +38,7 @@ export default function RegisterPage() {
         middle_name: middleName, 
         ext_name: extName, 
         email, 
+        user_phone_number: userPhone,
         password,
         password_confirmation: confirmPassword,
         username
@@ -175,6 +177,25 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+               
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    type="tel"
+                    value={userPhone}
+                    onChange={(e) => setUserPhone(e.target.value)}
+                    placeholder="09123456789"
+                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
                <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Username
@@ -192,6 +213,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+
 
               {/* Password */}
               <div>

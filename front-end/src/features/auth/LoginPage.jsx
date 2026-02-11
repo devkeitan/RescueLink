@@ -127,7 +127,7 @@ export default function LoginPage() {
                 href="/register"
                 className="text-red-600 font-semibold hover:text-red-700"
               >
-                Sign in
+                Create a new account
               </a>
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-3">

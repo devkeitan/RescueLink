@@ -4,11 +4,11 @@ export const authAPI = {
   // Login
   login: async (email, password) => {
     try {
-      const response = await api.post('/login', { email, password });
+      const response = await api.post('auth/login', { email, password });
       
       // Save token and user data
-      if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
+      if (response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       
@@ -21,7 +21,7 @@ export const authAPI = {
   // Register
   register: async (userData) => {
     try {
-      const response = await api.post('/register', userData);
+      const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
       throw error;

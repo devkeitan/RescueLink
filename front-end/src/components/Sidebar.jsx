@@ -17,6 +17,7 @@ const sidebarItems = [
   {path: "/vehicles", label: "Vehicle Management", icon: Ambulance },
   { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
+  { path: "/report-accident", label: "Report Accident", icon: AlertTriangle }
 ];
 
 const Sidebar = ({ isOpen, setIsOpen, activePath, onNavigate }) => {

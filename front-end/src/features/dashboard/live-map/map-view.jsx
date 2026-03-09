@@ -5,37 +5,32 @@ import 'leaflet/dist/leaflet.css';
 import { MAP_CENTER, DEFAULT_ZOOM, MARKER_ZOOM, TILE_STYLES, createAccidentIcon } from './mapConfig.jsx';
 import MapLegend from './map-legend.jsx';
 
-// Component to handle auto-zoom when alert is selected
 function MapController({ selectedAlert }) {
   const map = useMap();
-  
+
   useEffect(() => {
-    if (selectedAlert) {
-      // Zoom to selected alert
+    if (selectedAlert?.latitude && selectedAlert?.longitude) {
       map.setView(
-        [selectedAlert.latitude, selectedAlert.longitude], 
-        MARKER_ZOOM, 
+        [selectedAlert.latitude, selectedAlert.longitude],
+        MARKER_ZOOM,
         { animate: true, duration: 1 }
       );
     }
   }, [selectedAlert, map]);
-  
+
   return null;
 }
 
-// Marker with zoom and modal trigger on click
 function MarkerWithClick({ position, icon, onClick }) {
   const map = useMap();
-  
+
   return (
-    <Marker 
+    <Marker
       position={position}
       icon={icon}
       eventHandlers={{
         click: () => {
-          // Zoom to marker
           map.setView(position, MARKER_ZOOM, { animate: true, duration: 1 });
-          // Open modal
           onClick();
         }
       }}
@@ -46,7 +41,15 @@ function MarkerWithClick({ position, icon, onClick }) {
 function AccidentMap({ alerts = [], selectedAlert = null, onMarkerClick }) {
   const [mapStyle, setMapStyle] = useState('street');
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
-const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 'cancelled');
+
+  // Filter out resolved/cancelled and incidents without coordinates
+  const activeIncidents = alerts.filter(i =>
+    i.status !== 'resolved' &&
+    i.status !== 'cancelled' &&
+    i.latitude &&
+    i.longitude
+  );
+
   return (
     <div className="w-full h-full relative">
       {/* Layer Control */}
@@ -62,22 +65,18 @@ const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 
         {isLayerMenuOpen && (
           <div className="absolute top-10 right-0 bg-white rounded border-2 border-gray-400 shadow-lg p-3 min-w-[150px]">
             <div className="text-xs font-semibold text-gray-700 mb-2">Base Layers</div>
-            
             <label className="flex items-center gap-2 mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
               <input
-                type="radio"
-                name="mapStyle"
+                type="radio" name="mapStyle"
                 checked={mapStyle === 'street'}
                 onChange={() => setMapStyle('street')}
                 className="cursor-pointer"
               />
               <span className="text-sm">Street</span>
             </label>
-
             <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
               <input
-                type="radio"
-                name="mapStyle"
+                type="radio" name="mapStyle"
                 checked={mapStyle === 'satellite'}
                 onChange={() => setMapStyle('satellite')}
                 className="cursor-pointer"
@@ -88,31 +87,27 @@ const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 
         )}
       </div>
 
-      {/* Legend */}
       <MapLegend />
 
-      {/* Map */}
-      <MapContainer 
-        center={MAP_CENTER} 
-        zoom={DEFAULT_ZOOM} 
+      <MapContainer
+        center={MAP_CENTER}
+        zoom={DEFAULT_ZOOM}
         className="h-full w-full z-0"
       >
-        {/* Auto-zoom controller */}
         <MapController selectedAlert={selectedAlert} />
-        
+
         <TileLayer
           key={mapStyle}
           attribution={TILE_STYLES[mapStyle].attribution}
           url={TILE_STYLES[mapStyle].url}
         />
-        
-        {/* Markers without Popup - just click to open modal */}
-        {activeAlerts.map((alert) => (
+
+        {activeIncidents.map((incident) => (
           <MarkerWithClick
-            key={alert.id}
-            position={[alert.latitude, alert.longitude]}
-            icon={createAccidentIcon(alert.severity)}
-            onClick={() => onMarkerClick(alert)}
+            key={`${incident.source}-${incident.id}`}
+            position={[incident.latitude, incident.longitude]}
+            icon={createAccidentIcon(incident.source, incident.data?.severity)}
+            onClick={() => onMarkerClick(incident)}
           />
         ))}
       </MapContainer>

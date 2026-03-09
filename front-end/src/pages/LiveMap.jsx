@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'; 
-import { alertsAPI } from '@/api/alerts';
+import { useLocation } from 'react-router-dom';
+import { allAlertsAPI } from '@/api/allAlerts';
 import AlertDetailsModal from '@/features/dashboard/live-alerts/alert-details-modal';
 import AccidentMap from '@/features/dashboard/live-map/map-view';
 import AlertSidebar from '@/features/dashboard/live-alerts/alert-sidebar';
 import { socket } from '@/lib/socket';
 
+const normalizeAlert = (alert) => ({
+  source: 'alert',
+  id: alert.id,
+  userId: alert.user_id,
+  status: alert.status,
+  timestamp: alert.reported_at,
+  latitude: alert.latitude,
+  longitude: alert.longitude,
+  data: alert,
+});
+
 const LiveMap = () => {
-  const location = useLocation(); 
+  const location = useLocation();
   const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -15,133 +26,129 @@ const LiveMap = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch alerts when component mounts
-  useEffect(() => {
-    fetchAlerts();
-  }, []);
+  useEffect(() => { fetchAlerts(); }, []);
 
+  // ── Socket listeners ─────────────────────────────────────
   useEffect(() => {
-    
-    function onNewAlert(newAlert) { 
-      setAlerts(prev => [newAlert, ...prev]);
+    function onNewAlert(newAlert) {
+      setAlerts(prev => [normalizeAlert(newAlert), ...prev]);
     }
 
     function onStatusUpdated(updated) {
-      setAlerts(prev => prev.map(a => a.id === updated.id ?{ ...a, ...updated } : a));
-
+      setAlerts(prev => prev.map(a =>
+        a.source === 'alert' && a.id === updated.id
+          ? { ...a, status: updated.status, data: { ...a.data, ...updated } }
+          : a
+      ));
       setSelectedAlert(prev =>
-        prev?.id === updated.id ? { ...prev, ...updated } : prev
+        prev?.id === updated.id
+          ? { ...prev, status: updated.status, data: { ...prev.data, ...updated } }
+          : prev
       );
       setDetailsAlert(prev =>
-        prev?.id === updated.id ? { ...prev, ...updated } : prev
+        prev?.id === updated.id
+          ? { ...prev, status: updated.status, data: { ...prev.data, ...updated } }
+          : prev
       );
     }
 
     function onAssigned(updated) {
-      setAlerts(prev => prev.map(a => a.id === updated.id ? updated : a));
-
-      setSelectedAlert(prev =>
-        prev?.id === updated.id ? updated : prev
-      );
-      setDetailsAlert(prev =>
-        prev?.id === updated.id ? updated : prev
-      );
+      const normalized = normalizeAlert(updated);
+      setAlerts(prev => prev.map(a =>
+        a.source === 'alert' && a.id === updated.id ? normalized : a
+      ));
+      setSelectedAlert(prev => prev?.id === updated.id ? normalized : prev);
+      setDetailsAlert(prev => prev?.id === updated.id ? normalized : prev);
     }
 
     function onUpdated(updated) {
-      setAlerts(prev => prev.map(a => a.id === updated.id ? updated : a));
-
+      setAlerts(prev => prev.map(a =>
+        a.source === 'alert' && a.id === updated.id ? normalizeAlert(updated) : a
+      ));
     }
 
     function onDeleted({ id }) {
       const deletedId = Number(id);
-
       setAlerts(prev => prev.filter(a => a.id !== deletedId));
-
-      // If the deleted alert was open in the modal, close it
       setSelectedAlert(prev => prev?.id === deletedId ? null : prev);
       setDetailsAlert(prev => prev?.id === deletedId ? null : prev);
-      setDetailsModalOpen(prev => {
-        // close modal only if the deleted alert was the one being viewed
-        return prev && detailsAlert?.id === deletedId ? false : prev;
-      });
+      setDetailsModalOpen(prev =>
+        prev && detailsAlert?.id === deletedId ? false : prev
+      );
     }
 
-     socket.on('alert:new', onNewAlert);
+    socket.on('alert:new', onNewAlert);
     socket.on('alert:status_updated', onStatusUpdated);
     socket.on('alert:assigned', onAssigned);
     socket.on('alert:updated', onUpdated);
     socket.on('alert:deleted', onDeleted);
 
-     return () => {
+    return () => {
       socket.off('alert:new', onNewAlert);
       socket.off('alert:status_updated', onStatusUpdated);
       socket.off('alert:assigned', onAssigned);
       socket.off('alert:updated', onUpdated);
       socket.off('alert:deleted', onDeleted);
     };
-
   }, []);
 
-
-  // ✅ Check if alert was passed from navigation
+  // ── Auto-select from navigation state ───────────────────
   useEffect(() => {
     if (location.state?.selectedAlert) {
-      const alert = location.state.selectedAlert;
-      setSelectedAlert(alert);
-      
-      // Optional: Open modal automatically
-      setDetailsAlert(alert);
+      const incident = location.state.selectedAlert;
+      // Handle both raw alert and normalized incident shapes
+      const normalized = incident.source
+        ? incident
+        : normalizeAlert(incident);
+      setSelectedAlert(normalized);
+      setDetailsAlert(normalized);
       setDetailsModalOpen(true);
     }
   }, [location.state]);
 
+  // ── Fetch ────────────────────────────────────────────────
   const fetchAlerts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await alertsAPI.getAll();
-      console.log('Fetched alerts:', data);
-      setAlerts(data);
+      const response = await allAlertsAPI.getAll({ limit: 100 });
+      setAlerts(response.data);
     } catch (err) {
-      console.error('Error fetching alerts:', err);
       setError(err.message || 'Failed to load alerts');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAlertSelect = (alert) => {
-    setSelectedAlert(alert);
-  };
+  const handleAlertSelect = (incident) => setSelectedAlert(incident);
 
-  const handleViewDetails = (alert) => {
-    setDetailsAlert(alert);
+  const handleViewDetails = (incident) => {
+    setDetailsAlert(incident);
     setDetailsModalOpen(true);
   };
 
-  const handleMarkerClick = (alert) => {
-    setSelectedAlert(alert);
-    setDetailsAlert(alert);
+  const handleMarkerClick = (incident) => {
+    setSelectedAlert(incident);
+    setDetailsAlert(incident);
     setDetailsModalOpen(true);
   };
 
-const handleUpdateAlert = (updatedAlert) => {
-    // ✅ functional updater — fixes stale closure
-    setAlerts(prev => prev.map(a => a.id === updatedAlert.id ? updatedAlert : a));
-    setDetailsAlert(updatedAlert);
-    setSelectedAlert(prev =>
-      prev?.id === updatedAlert.id ? updatedAlert : prev
-    );
+  const handleUpdateAlert = (updatedAlert) => {
+    const normalized = normalizeAlert(updatedAlert);
+    setAlerts(prev => prev.map(a =>
+      a.source === 'alert' && a.id === updatedAlert.id ? normalized : a
+    ));
+    setDetailsAlert(normalized);
+    setSelectedAlert(prev => prev?.id === updatedAlert.id ? normalized : prev);
   };
 
-  // ── Render ────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading alerts...</p>
+          <p className="text-gray-600">Loading incidents...</p>
         </div>
       </div>
     );
@@ -169,9 +176,9 @@ const handleUpdateAlert = (updatedAlert) => {
           onAlertSelect={handleAlertSelect}
           onViewDetails={handleViewDetails}
         />
-        
+
         <div className="flex-1 rounded-lg overflow-hidden">
-          <AccidentMap 
+          <AccidentMap
             alerts={alerts}
             selectedAlert={selectedAlert}
             onMarkerClick={handleMarkerClick}

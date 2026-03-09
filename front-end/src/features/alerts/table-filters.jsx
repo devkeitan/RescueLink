@@ -7,37 +7,41 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function TableFilters({ table, hideStatusFilter }) {
+
+export default function TableFilters({ table, hideStatusFilter, globalFilter, setGlobalFilter }) {
   return (
     <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border">
+
+      {/* Global Search */}
       <Input
-        placeholder="Search by title or location..."
-        value={table.getColumn("title")?.getFilterValue() ?? ""}
-        onChange={(event) =>
-          table.getColumn("title")?.setFilterValue(event.target.value)
-        }
+        placeholder="Search anything..."
+        value={globalFilter ?? ''}
+        onChange={(e) => setGlobalFilter(e.target.value)}
         className="flex-1 min-w-[200px] focus-visible:ring-2 focus-visible:ring-red-500"
       />
 
-         {!hideStatusFilter && (
-      <Select
-        value={table.getColumn("status")?.getFilterValue() ?? "all"}
-        onValueChange={(value) =>
-          table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
-        }
-      >
-        <SelectTrigger className="min-w-[150px]">
-          <SelectValue placeholder="All Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="responding">Responding</SelectItem>
-          <SelectItem value="resolved">Resolved</SelectItem>
-          <SelectItem value="cancelled">Cancelled</SelectItem>
-        </SelectContent>
-      </Select>
-     )}
+      {/* Status Filter */}
+      {!hideStatusFilter && (
+        <Select
+          value={table.getColumn("status")?.getFilterValue() ?? "all"}
+          onValueChange={(value) =>
+            table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="min-w-[150px]">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="responding">Responding</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* Severity Filter */}
       <Select
         value={table.getColumn("severity")?.getFilterValue() ?? "all"}
         onValueChange={(value) =>
@@ -56,10 +60,11 @@ export default function TableFilters({ table, hideStatusFilter }) {
         </SelectContent>
       </Select>
 
+      {/* Type Filter */}
       <Select
-        value={table.getColumn("alert_type")?.getFilterValue() ?? "all"}
+        value={table.getColumn("type")?.getFilterValue() ?? "all"}
         onValueChange={(value) =>
-          table.getColumn("alert_type")?.setFilterValue(value === "all" ? "" : value)
+          table.getColumn("type")?.setFilterValue(value === "all" ? "" : value)
         }
       >
         <SelectTrigger className="min-w-[150px]">
@@ -67,14 +72,12 @@ export default function TableFilters({ table, hideStatusFilter }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Types</SelectItem>
-          <SelectItem value="medical">Medical</SelectItem>
-          <SelectItem value="fire">Fire</SelectItem>
-          <SelectItem value="accident">Accident</SelectItem>
-          <SelectItem value="crime">Crime</SelectItem>
-          <SelectItem value="natural_disaster">Natural Disaster</SelectItem>
-          <SelectItem value="other">Other</SelectItem>
+          <SelectItem value="alert">Manual Alert</SelectItem>
+          <SelectItem value="crash">Crash Detected</SelectItem>
+         
         </SelectContent>
       </Select>
+
     </div>
   );
 }

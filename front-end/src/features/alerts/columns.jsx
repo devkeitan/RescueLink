@@ -6,14 +6,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, CheckCircle, Pin, MoreHorizontal, Trash2 } from "lucide-react";
+import { Eye, CheckCircle, Pin, MoreHorizontal } from "lucide-react";
 
 export const createColumns = (onView, onStatusChange, onAssign, onDelete, onViewOnMap) => [
   {
-    accessorKey: "user",
+    accessorKey: "user ",
     header: "USER",
     cell: ({ row }) => {
-      const user = row.original.user;
+      const user = row.original.data?.user;
       return (
         <div>
           <div className="font-medium text-sm">
@@ -27,30 +27,42 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
     },
   },
   {
-    accessorKey: "title",
-    header: "TITLE",
-    cell: ({ row }) => (
-      <div>
-        <div className="text-sm font-medium">{row.original.title}</div>
-        <div className="text-xs text-muted-foreground line-clamp-1">
-          {row.original.description || 'No description'}
+    id: "incident",
+    header: "INCIDENT",
+    cell: ({ row }) => {
+      const { source, data } = row.original;
+      return (
+        <div>
+          <div className="text-sm font-medium">
+            {source === 'alert' ? data.title : data.event_type}
+          </div>
+          <div className="text-xs text-muted-foreground line-clamp-1">
+            {source === 'alert'
+              ? (data.description || 'No description')
+              : `Impact: ${data.impact_force ?? 'N/A'}g`}
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
   },
   {
-    accessorKey: "location",
+    id: "location",
     header: "LOCATION",
-    cell: ({ row }) => (
-      <div>
-        <div className="text-sm font-medium">{row.original.location}</div>
-        {row.original.latitude && row.original.longitude && (
-          <div className="text-xs text-muted-foreground">
-            {row.original.latitude.toFixed(4)}, {row.original.longitude.toFixed(4)}
+    cell: ({ row }) => {
+      const { source, data } = row.original;
+      return (
+        <div>
+          <div className="text-sm font-medium">
+            {source === 'alert' ? data.location : 'GPS Detected'}
           </div>
-        )}
-      </div>
-    ),
+          {data.latitude && data.longitude && (
+            <div className="text-xs text-muted-foreground">
+              {parseFloat(data.latitude).toFixed(4)}, {parseFloat(data.longitude).toFixed(4)}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
@@ -70,73 +82,91 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
       );
     },
   },
-  {
-    accessorKey: "alert_type",
-    header: "TYPE",
-    cell: ({ row }) => {
-      const type = row.original.alert_type;
-      return (
-        <span className="text-sm capitalize">
-          {type.replace('_', ' ')}
-        </span>
-      );
-    },
+{
+  id: "type",
+  header: "TYPE",
+  filterFn: (row, columnId, filterValue) => {
+    if (!filterValue) return true;
+    // Match by source (alert/crash)
+    if (filterValue === 'alert' || filterValue === 'crash') {
+      return row.original.source === filterValue;
+    }
+    // Match by alert_type (medical, fire, etc.)
+    return row.original.data?.alert_type === filterValue;
   },
-  {
-    accessorKey: "severity",
-    header: "SEVERITY",
-    cell: ({ row }) => {
-      const severity = row.original.severity;
-      const variantMap = {
-        critical: "bg-red-100 text-red-700",
-        high: "bg-orange-100 text-orange-700",
-        medium: "bg-yellow-100 text-yellow-700",
-        low: "bg-blue-100 text-blue-700",
-      };
-      return (
-        <Badge className={`font-medium capitalize ${variantMap[severity]}`}>
-          {severity}
+  cell: ({ row }) => {
+    const { source, data } = row.original;
+    return (
+      <div className="space-y-1">
+        <Badge className={source === 'alert'
+          ? 'bg-purple-100 text-purple-700'
+          : 'bg-red-100 text-red-700'}>
+          {source === 'alert' ? 'Alert' : 'Crash'}
         </Badge>
-      );
-    },
+       
+      </div>
+    );
   },
+},
+{
+  id: "severity",
+  header: "SEVERITY",
+  filterFn: (row, columnId, filterValue) => {
+    if (!filterValue) return true;
+    return row.original.data?.severity === filterValue;
+  },
+  cell: ({ row }) => {
+    const { source, data } = row.original;
+    if (source === 'crash') {
+      return <span className="text-xs text-muted-foreground">N/A</span>;
+    }
+    const variantMap = {
+      critical: "bg-red-100 text-red-700",
+      high: "bg-orange-100 text-orange-700",
+      medium: "bg-yellow-100 text-yellow-700",
+      low: "bg-blue-100 text-blue-700",
+    };
+    return (
+      <Badge className={`font-medium capitalize ${variantMap[data.severity]}`}>
+        {data.severity}
+      </Badge>
+    );
+  },
+},
+
   {
     id: "actions",
     header: "ACTIONS",
     cell: ({ row }) => {
-      const alert = row.original;
+      const incident = row.original;
+      const rawData = incident.data;
 
       return (
         <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8" 
+          <Button
+            variant="ghost" size="icon" className="h-8 w-8"
             title="View Details"
-            onClick={() => onView(alert)}
+            onClick={() => onView(incident)}
           >
             <Eye className="h-4 w-4" />
           </Button>
 
-          {alert.status === "pending" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
+          {incident.status === "pending" && (
+            <Button
+              variant="ghost" size="icon" className="h-8 w-8"
               title="Mark as Responding"
-              onClick={() => onStatusChange(alert, 'responding')}
+              onClick={() => onStatusChange(incident, 'responding')}
             >
               <CheckCircle className="h-4 w-4" />
             </Button>
           )}
 
-          {alert.latitude && alert.longitude && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" 
+          {incident.latitude && incident.longitude && (
+            <Button
+              variant="ghost" size="icon"
+              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               title="View on Map"
-              onClick={() => onViewOnMap(alert)} // ✅ Calls navigate function
+              onClick={() => onViewOnMap(rawData)}
             >
               <Pin className="h-4 w-4" />
             </Button>
@@ -149,30 +179,29 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onView(alert)}>
+              <DropdownMenuItem onClick={() => onView(incident)}>
                 View Details
               </DropdownMenuItem>
-              {alert.latitude && alert.longitude && (
-                <DropdownMenuItem onClick={() => onViewOnMap(alert)}>
+              {incident.latitude && incident.longitude && (
+                <DropdownMenuItem onClick={() => onViewOnMap(incident)}>
                   View on Map
                 </DropdownMenuItem>
               )}
-             
-              {alert.status !== 'resolved' && (
-                <DropdownMenuItem onClick={() => onStatusChange(alert, 'resolved')}>
+              {incident.status !== 'resolved' && (
+                <DropdownMenuItem onClick={() => onStatusChange(incident, 'resolved')}>
                   Mark as Resolved
                 </DropdownMenuItem>
               )}
-              {alert.status !== 'cancelled' && (
-                <DropdownMenuItem onClick={() => onStatusChange(alert, 'cancelled')}>
-                  Cancel Alert
+              {incident.status !== 'cancelled' && (
+                <DropdownMenuItem onClick={() => onStatusChange(incident, 'cancelled')}>
+                  Cancel Incident
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive"
-                onClick={() => onDelete(alert)}
+                onClick={() => onDelete(incident)}
               >
-                Delete Alert
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

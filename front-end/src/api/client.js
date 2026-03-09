@@ -26,13 +26,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || '';
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/me');
+
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      window.location.href = '/';
+      //window.location.href = '/';
+        console.error('401 received, would redirect here');   
     }
-    
-    const message = error.response?.data?.message || error.message || 'An error occurred';
+
+    const message =
+      error.response?.data?.message || error.message || 'An error occurred';
     return Promise.reject(message);
   }
 );

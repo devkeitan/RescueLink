@@ -5,71 +5,88 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Clock, AlertCircle } from 'lucide-react';
 
 export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onViewDetails }) {
-
-  const activeAlerts = alerts.filter(a => a.status !== 'resolved' && a.status !== 'cancelled');
+  const activeIncidents = alerts.filter(i =>
+    i.status !== 'resolved' && i.status !== 'cancelled'
+  );
 
   return (
     <Card className="w-80">
       <CardContent className="p-4">
         <div className="mb-4">
-          <h2 className="font-bold text-lg">Active Alerts</h2>
+          <h2 className="font-bold text-lg">Active Incidents</h2>
           <p className="text-xs text-muted-foreground">
-            Total Alerts ({activeAlerts.length})
+            Total ({activeIncidents.length})
           </p>
         </div>
 
         <ScrollArea className="h-[650px]">
           <div className="space-y-2">
-            {activeAlerts.map((alert) => (
+            {activeIncidents.map((incident) => (
               <div
-                key={alert.id}
-                onClick={() => onAlertSelect(alert)}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                  selectedAlert?.id === alert.id
-                    ? 'bg-blue-50 border-blue-600 shadow-md'
-                    : 'hover:bg-muted border-transparent'
+                key={`${incident.source}-${incident.id}`}
+                onClick={() => onAlertSelect(incident)}
+                className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all ${
+                  incident.source === 'crash'
+                    ? 'border-l-red-500'
+                    : 'border-l-purple-500'
+                } ${
+                  selectedAlert?.id === incident.id
+                    ? 'bg-blue-50 shadow-md'
+                    : 'hover:bg-muted'
                 }`}
               >
-                <div className="flex justify-end gap-2 mb-2 capitalize">
-                  <Badge  className={
-                      alert.status === 'resolved'
-                        ? 'bg-green-500 text-white '
-                        : alert.status === 'pending'
-                        ? 'bg-orange-500 text-white '
-                        : alert.status === 'verified'
-                        ? 'bg-blue-500 text-white '
-                        : 'bg-gray-500 text-white '
-                    }
-                  >{alert.status}</Badge>
-                  <Badge
-                    className={
-                      alert.severity === 'critical'
-                        ? 'bg-red-500 text-white'
-                        : alert.severity === 'high'
-                        ? 'bg-orange-500 text-white'
-                        : alert.severity === 'medium'
-                        ? 'bg-yellow-500 text-white'
-                        : 'bg-blue-500 text-white'
-                    }
-                  >
-                    {alert.severity}
+                {/* Source + Status + Severity */}
+                <div className="flex justify-between gap-2 mb-2 flex-wrap">
+                  <Badge className={
+                    incident.source === 'crash'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-purple-100 text-purple-700'
+                  }>
+                    {incident.source === 'crash' ? '💥 Crash' : '🚨 Alert'}
                   </Badge>
+
+                  <div className="flex gap-1 capitalize">
+                    <Badge className={
+                      incident.status === 'pending'
+                        ? 'bg-orange-500 text-white'
+                        : incident.status === 'responding'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-500 text-white'
+                    }>
+                      {incident.status}
+                    </Badge>
+
+                    {incident.source === 'alert' && incident.data?.severity && (
+                      <Badge className={
+                        incident.data.severity === 'critical' ? 'bg-red-500 text-white' :
+                        incident.data.severity === 'high'     ? 'bg-orange-500 text-white' :
+                        incident.data.severity === 'medium'   ? 'bg-yellow-500 text-white' :
+                                                                 'bg-blue-500 text-white'
+                      }>
+                        {incident.data.severity}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
+                {/* User name */}
                 <p className="text-sm font-medium mb-1">
-                  {alert.user 
-                    ? `${alert.user.first_name} ${alert.user.last_name}` 
+                  {incident.data?.user
+                    ? `${incident.data.user.first_name} ${incident.data.user.last_name}`
                     : 'Unknown User'}
                 </p>
 
+                {/* Timestamp + Type */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock size={12} />
-                    {new Date(alert.reported_at).toLocaleString()}
+                    {new Date(incident.timestamp).toLocaleString()}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground capitalize">
                     <AlertCircle size={12} />
-                    {alert.alert_type.replace('_', ' ')}
+                    {incident.source === 'alert'
+                      ? incident.data?.alert_type?.replace('_', ' ')
+                      : `Impact: ${incident.data?.impact_force ?? 'N/A'}g`}
                   </div>
                 </div>
 
@@ -79,7 +96,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                   className="w-full mt-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onViewDetails(alert);
+                    onViewDetails(incident);
                   }}
                 >
                   <Eye size={14} className="mr-1" />

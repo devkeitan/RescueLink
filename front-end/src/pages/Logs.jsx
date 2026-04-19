@@ -1,5 +1,6 @@
 import LogTable from "@/features/logs/log-table";
 
+
 const Logs = () => {
   return (
     <div className="space-y-6">

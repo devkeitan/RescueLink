@@ -38,32 +38,28 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Active Alerts"
+          title="Total Active Emergencies"
           value={stats?.total_active}
           icon={AlertTriangle}
           color="red"
-          trend="+3 from last hour"
         />
         <StatCard
-          title="Responders Online"
-          value="48"
+          title="Total Active Crashes"
+          value={stats?.active_crashes  }
           icon={Users}
           color="blue"
-          trend="92% availability"
         />
         <StatCard
           title="Accidents Today"
-          value="27"
+          value={stats?.today_accidents}
           icon={Car}
           color="orange"
-          trend="-8% from yesterday"
         />
         <StatCard
-          title="Avg Response Time"
-          value="4.2m"
+          title="Total Accidents"
+          value={stats?.total_accidents}
           icon={Clock}
           color="green"
-          trend="12s faster"
         />
       </div>
 

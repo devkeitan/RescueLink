@@ -7,7 +7,7 @@ const colorClasses = {
   green: "bg-green-100 text-green-600",
 };
 
-export function StatCard({ title, value, icon: Icon, color, trend }) {
+export function StatCard({ title, value, icon: Icon, color }) {
   return (
     <div className="bg-white rounded-lg p-6 border border-gray-200">
       <div className="flex items-start justify-between">
@@ -16,9 +16,7 @@ export function StatCard({ title, value, icon: Icon, color, trend }) {
           <p className="text-3xl font-semibold text-gray-900 mt-2">
             {value}
           </p>
-          {trend && (
-            <p className="text-xs text-gray-500 mt-2">{trend}</p>
-          )}
+          
         </div>
 
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>

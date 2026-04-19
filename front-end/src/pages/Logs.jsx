@@ -1,5 +1,5 @@
-import LogTable from "@/features/logs/log-table";
-
+import LogTable from '@/features/logs/LogTable';
+import React from 'react'
 
 const Logs = () => {
   return (

@@ -1,4 +1,5 @@
 
+import LogTable from '@/features/log/log-table';
 import React from 'react'
 
 const Logs = () => {
@@ -7,6 +8,8 @@ const Logs = () => {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">System Logs</h1>
         <p className="text-gray-600 mt-1">Monitor system events and activities</p>
+
+        <LogTable/>
       </div>
     </div>
   );

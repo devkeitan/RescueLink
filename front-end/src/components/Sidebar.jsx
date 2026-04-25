@@ -22,7 +22,6 @@ const sidebarItems = [
   { path: "/users", label: "User Management", icon: UserCog },
   {path: "/vehicles", label: "Vehicle Management", icon: Ambulance },
   { path: "/logs", label: "Audit Logs", icon: ShieldCheck },
-  { path: "/settings", label: "Settings", icon: SettingsIcon },
   { path: "/report-accident", label: "Report Accident", icon: AlertTriangle }
 ];
 

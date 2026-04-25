@@ -90,6 +90,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     checkAuth,
+    forgotPassword: authAPI.forgotPassword, // Expose forgot password function
+    resetPassword: authAPI.resetPassword, // Expose reset password function
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -62,4 +62,22 @@ export const authAPI = {
     return user ? JSON.parse(user) : null;
   },
 
+  forgotPassword: async (email) => {
+    try {
+      const  response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  resetPassword: async (token, password) => {
+    try {
+      const response = await api.post('/auth/reset-password', { token, password });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 };

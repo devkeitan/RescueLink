@@ -12,6 +12,8 @@ import Register from '@/pages/Register';
 import Vehicles from '@/pages/Vehicles';
 import ReportAccident from '@/pages/ReportAccident';
 import History from '@/pages/alerts/History';
+import ResetPassword from '@/pages/ResetPassword';
+import ForgotPassword from '@/pages/ForgotPassword';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +25,14 @@ export const router = createBrowserRouter([
     element: <Register />,
   },
   {
+    path: '/reset-password',
+    element: <ResetPassword />,
+  },
+   {
+    path: '/forgot-password',
+    element: <ForgotPassword/>,
+  },
+  {
     element: <ProtectedRoute />,
     children: [
       {
@@ -32,7 +42,6 @@ export const router = createBrowserRouter([
           { path: '/map', element: <LiveMap /> },
           { path: '/users', element: <Users /> },
           {path: '/vehicles', element: <Vehicles /> },
-          { path: '/settings', element: <Settings /> },
           { path: '/logs', element: <Logs /> },
           { path: '/alerts/active', element: <Alerts /> },
           {path: '/alerts/history', element: <History /> },

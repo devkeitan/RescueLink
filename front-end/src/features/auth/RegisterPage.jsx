@@ -18,6 +18,7 @@ export default function RegisterPage() {
   const [userPhone, setUserPhone] = useState('');
   const [relativeNumber, setRelativeNumber] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [medicalHistory, setMedicalHistory] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +49,7 @@ export default function RegisterPage() {
         user_phone_number: userPhone,
         relative_number: relativeNumber,
         birthdate: birthdate,
+        medical_history: medicalHistory,
         password,
         password_confirmation: confirmPassword,
         username
@@ -195,6 +197,9 @@ export default function RegisterPage() {
                 </div>
               </div>
                
+               <div className='grid grid-cols-2 gap-5'>
+
+              
               {/* Phone */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -232,6 +237,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+               </div>
 
               {/* Birthdate */}
               <div>
@@ -263,6 +269,25 @@ export default function RegisterPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="juan"
+                    className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+                 {/* Medical History */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Medical History
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    value={medicalHistory}
+                    onChange={(e) => setMedicalHistory(e.target.value)}
+                    placeholder="e.g., allergies, chronic conditions, etc."
                     className="pl-11 h-12 border-gray-300 focus:border-red-500 focus:ring-red-500"
                     required
                     disabled={loading}

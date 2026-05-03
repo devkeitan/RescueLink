@@ -5,4 +5,11 @@ export const allAlertsAPI = {
     const response = await api.get('/allAlerts', { params });
     return response.data;
   },
+    getAllForMap: async (params = { limit: 1000 }) => {
+    const response = await api.get('/allAlerts', { params });
+    return response.data.data;
+  }
+
 };
+
+

@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { StatCard } from '@/components/StatCard';
 import { AlertTriangle, Users, Car, Clock, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import LiveAlertsTable from '@/features/dashboard/live-alerts/live-alerts-table';
-import MapView from '@/features/dashboard/live-map/map-view';
 import { getStats } from '@/api/reports';
 import BarGraph from '@/features/dashboard/charts/BarGraph';
 import AccidentMap from '@/features/dashboard/live-map/map-view';
 import { allAlertsAPI } from '@/api/allAlerts';
 import IncidentFilters from '@/features/dashboard/live-map/IncidentFilters';
+import LiveAlertsTable from '@/features/dashboard/live-alerts/live-alerts-table';
 
 // Sample alerts data (you can move this to a shared file later)
 const alerts = [];
@@ -123,6 +120,7 @@ const Dashboard = () => {
       onMarkerClick={(m) => console.log(m)}
     />
   </div>
+
 </div>
 
 

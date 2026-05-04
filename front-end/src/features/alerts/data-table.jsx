@@ -22,11 +22,11 @@ export function DataTable({ columns, data, hideStatusFilter }) {
 
   const globalFilterFn = (row, columnId, filterValue) => {
   const search = filterValue.toLowerCase();
-  const { source, status, data } = row.original;
+  const { type, status, data } = row.original;
 
   // Define what fields you want to be searchable
   const searchableFields = [
-    source,
+    type,
     status,
     data?.title,
     data?.description,
@@ -97,7 +97,7 @@ export function DataTable({ columns, data, hideStatusFilter }) {
                 <TableRow
                   key={row.id}
                   className={`border-l-4 hover:bg-muted/50 ${
-                    row.original.source === 'crash'
+                    row.original.type === 'crash'
                       ? 'border-l-red-500'
                       : 'border-l-purple-500'
                   }`}

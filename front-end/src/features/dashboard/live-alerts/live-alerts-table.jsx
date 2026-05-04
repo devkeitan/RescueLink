@@ -14,6 +14,24 @@ const severityColors = {
 
 export default function LiveAlertsTable() {
   const [selectedAlert, setSelectedAlert] = useState(null);
+  const alerts = [
+    {
+      id: 'ALERT-001',
+      severity: 'Critical',
+      user: 'John Doe',
+      timestamp: '2024-06-01 14:30',
+      location: '123 Main St, Springfield',
+      type: 'Fall Detection',
+    },
+    {
+      id: 'ALERT-002',
+      severity: 'High',
+      user
+: 'Jane Smith',
+      timestamp: '2024-06-01 15:00',
+      location: '456 Elm St, Springfield',
+      type: 'SOS Button',
+    },];
 
   return (
     <>

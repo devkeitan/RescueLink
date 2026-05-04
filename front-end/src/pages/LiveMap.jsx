@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { allAlertsAPI } from '@/api/allAlerts';
 import AlertDetailsModal from '@/features/dashboard/live-alerts/alert-details-modal';
@@ -6,8 +6,9 @@ import AccidentMap from '@/features/dashboard/live-map/map-view';
 import AlertSidebar from '@/features/dashboard/live-alerts/alert-sidebar';
 import { socket } from '@/lib/socket';
 
+
 const normalizeAlert = (alert) => ({
-  source: 'alert',
+  type: 'alert',
   id: alert.id,
   userId: alert.user_id,
   status: alert.status,
@@ -16,6 +17,18 @@ const normalizeAlert = (alert) => ({
   longitude: alert.longitude,
   data: alert,
 });
+
+const normalizeCrash = (crash) => ({
+  type: 'crash',
+  id: crash.id,
+  userId: crash.user_id,
+  status: crash.status,
+  timestamp: crash.triggered_at,
+  latitude: crash.latitude,
+  longitude: crash.longitude,
+  data: crash,
+});
+
 
 const LiveMap = () => {
   const location = useLocation();
@@ -30,65 +43,92 @@ const LiveMap = () => {
 
   // ── Socket listeners ─────────────────────────────────────
   useEffect(() => {
+    // ── Alert listeners ──
     function onNewAlert(newAlert) {
       setAlerts(prev => [normalizeAlert(newAlert), ...prev]);
     }
-
-    function onStatusUpdated(updated) {
+    function onAlertStatusUpdated(updated) {
       setAlerts(prev => prev.map(a =>
-        a.source === 'alert' && a.id === updated.id
+        a.type === 'alert' && a.id === updated.id
           ? { ...a, status: updated.status, data: { ...a.data, ...updated } }
           : a
       ));
       setSelectedAlert(prev =>
-        prev?.id === updated.id
+        prev?.type === 'alert' && prev.id === updated.id
           ? { ...prev, status: updated.status, data: { ...prev.data, ...updated } }
           : prev
       );
       setDetailsAlert(prev =>
-        prev?.id === updated.id
+        prev?.type === 'alert' && prev.id === updated.id
           ? { ...prev, status: updated.status, data: { ...prev.data, ...updated } }
           : prev
       );
     }
-
-    function onAssigned(updated) {
+    function onAlertAssigned(updated) {
       const normalized = normalizeAlert(updated);
       setAlerts(prev => prev.map(a =>
-        a.source === 'alert' && a.id === updated.id ? normalized : a
+        a.type === 'alert' && a.id === updated.id ? normalized : a
       ));
-      setSelectedAlert(prev => prev?.id === updated.id ? normalized : prev);
-      setDetailsAlert(prev => prev?.id === updated.id ? normalized : prev);
+      setSelectedAlert(prev => prev?.type === 'alert' && prev.id === updated.id ? normalized : prev);
+      setDetailsAlert(prev => prev?.type === 'alert' && prev.id === updated.id ? normalized : prev);
     }
-
-    function onUpdated(updated) {
+    function onAlertUpdated(updated) {
       setAlerts(prev => prev.map(a =>
-        a.source === 'alert' && a.id === updated.id ? normalizeAlert(updated) : a
+        a.type === 'alert' && a.id === updated.id ? normalizeAlert(updated) : a
       ));
     }
-
-    function onDeleted({ id }) {
+    function onAlertDeleted({ id }) {
       const deletedId = Number(id);
-      setAlerts(prev => prev.filter(a => a.id !== deletedId));
-      setSelectedAlert(prev => prev?.id === deletedId ? null : prev);
-      setDetailsAlert(prev => prev?.id === deletedId ? null : prev);
-      setDetailsModalOpen(prev =>
-        prev && detailsAlert?.id === deletedId ? false : prev
-      );
+      setAlerts(prev => prev.filter(a => !(a.type === 'alert' && a.id === deletedId)));
+      setSelectedAlert(prev => prev?.type === 'alert' && prev.id === deletedId ? null : prev);
+      setDetailsAlert(prev => {
+        if (prev?.type === 'alert' && prev.id === deletedId) {
+          setDetailsModalOpen(false);
+          return null;
+        }
+        return prev;
+      });
     }
 
-    socket.on('alert:new', onNewAlert);
-    socket.on('alert:status_updated', onStatusUpdated);
-    socket.on('alert:assigned', onAssigned);
-    socket.on('alert:updated', onUpdated);
-    socket.on('alert:deleted', onDeleted);
+    // ── Crash listeners ──
+    function onNewCrash(newCrash) {
+      setAlerts(prev => [normalizeCrash(newCrash), ...prev]);
+    }
+    function onCrashUpdated(updated) {
+      const normalized = normalizeCrash(updated);
+      setAlerts(prev => prev.map(a =>
+        a.type === 'crash' && a.id === updated.id ? normalized : a
+      ));
+      setSelectedAlert(prev => prev?.type === 'crash' && prev.id === updated.id ? normalized : prev);
+      setDetailsAlert(prev => prev?.type === 'crash' && prev.id === updated.id ? normalized : prev);
+    }
+    function onCrashAssigned(updated) {
+      const normalized = normalizeCrash(updated);
+      setAlerts(prev => prev.map(a =>
+        a.type === 'crash' && a.id === updated.id ? normalized : a
+      ));
+      setSelectedAlert(prev => prev?.type === 'crash' && prev.id === updated.id ? normalized : prev);
+      setDetailsAlert(prev => prev?.type === 'crash' && prev.id === updated.id ? normalized : prev);
+    }
+
+    socket.on('alert:new',            onNewAlert);
+    socket.on('alert:status_updated', onAlertStatusUpdated);
+    socket.on('alert:assigned',       onAlertAssigned);
+    socket.on('alert:updated',        onAlertUpdated);
+    socket.on('alert:deleted',        onAlertDeleted);
+    socket.on('crash:new',            onNewCrash);
+    socket.on('crash:updated',        onCrashUpdated);
+    socket.on('crash:assigned',       onCrashAssigned);
 
     return () => {
-      socket.off('alert:new', onNewAlert);
-      socket.off('alert:status_updated', onStatusUpdated);
-      socket.off('alert:assigned', onAssigned);
-      socket.off('alert:updated', onUpdated);
-      socket.off('alert:deleted', onDeleted);
+      socket.off('alert:new',            onNewAlert);
+      socket.off('alert:status_updated', onAlertStatusUpdated);
+      socket.off('alert:assigned',       onAlertAssigned);
+      socket.off('alert:updated',        onAlertUpdated);
+      socket.off('alert:deleted',        onAlertDeleted);
+      socket.off('crash:new',            onNewCrash);
+      socket.off('crash:updated',        onCrashUpdated);
+      socket.off('crash:assigned',       onCrashAssigned);
     };
   }, []);
 
@@ -96,8 +136,8 @@ const LiveMap = () => {
   useEffect(() => {
     if (location.state?.selectedAlert) {
       const incident = location.state.selectedAlert;
-      // Handle both raw alert and normalized incident shapes
-      const normalized = incident.source
+      // Already normalized if it has .type set by our normalize functions
+      const normalized = (incident.type === 'alert' || incident.type === 'crash')
         ? incident
         : normalizeAlert(incident);
       setSelectedAlert(normalized);
@@ -120,27 +160,37 @@ const LiveMap = () => {
     }
   };
 
-  const handleAlertSelect = (incident) => setSelectedAlert(incident);
+  const handleAlertSelect = useCallback((incident) => setSelectedAlert(incident), []);
 
-  const handleViewDetails = (incident) => {
+  const handleViewDetails = useCallback((incident) => {
     setDetailsAlert(incident);
     setDetailsModalOpen(true);
-  };
+  }, []);
 
-  const handleMarkerClick = (incident) => {
+  const handleMarkerClick = useCallback((incident) => {
     setSelectedAlert(incident);
     setDetailsAlert(incident);
     setDetailsModalOpen(true);
-  };
+  }, []);
 
-  const handleUpdateAlert = (updatedAlert) => {
-    const normalized = normalizeAlert(updatedAlert);
+  const handleUpdateAlert = useCallback((updatedIncident) => {
+    const isCrash =
+      updatedIncident.type === 'crash' ||
+      !!updatedIncident.triggered_at ||
+      !!updatedIncident.event_type;
+
+    const normalized = isCrash
+      ? normalizeCrash(updatedIncident.data || updatedIncident)
+      : normalizeAlert(updatedIncident.data || updatedIncident);
+
     setAlerts(prev => prev.map(a =>
-      a.source === 'alert' && a.id === updatedAlert.id ? normalized : a
+      a.type === normalized.type && a.id === normalized.id ? normalized : a
     ));
     setDetailsAlert(normalized);
-    setSelectedAlert(prev => prev?.id === updatedAlert.id ? normalized : prev);
-  };
+    setSelectedAlert(prev =>
+      prev?.type === normalized.type && prev.id === normalized.id ? normalized : prev
+    );
+  }, []);
 
   // ── Render ───────────────────────────────────────────────
   if (loading) {
@@ -176,7 +226,6 @@ const LiveMap = () => {
           onAlertSelect={handleAlertSelect}
           onViewDetails={handleViewDetails}
         />
-
         <div className="flex-1 rounded-lg overflow-hidden">
           <AccidentMap
             alerts={alerts}

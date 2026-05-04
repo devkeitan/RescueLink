@@ -16,7 +16,7 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
   const { user } = useAuth();
   const canAssign = ['admin', 'responder'].includes(user?.role);
 
-  const isCrash = incident.source === 'crash';
+ const isCrash = incident.type === 'crash';
   const data = incident.data || incident;
   const currentStatus = incident.status ?? data.status;
 

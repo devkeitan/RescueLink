@@ -26,7 +26,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                 key={`${incident.source}-${incident.id}`}
                 onClick={() => onAlertSelect(incident)}
                 className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all ${
-                  incident.source === 'crash'
+                  incident.type === 'crash'
                     ? 'border-l-red-500'
                     : 'border-l-purple-500'
                 } ${
@@ -38,11 +38,11 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                 {/* Source + Status + Severity */}
                 <div className="flex justify-between gap-2 mb-2 flex-wrap">
                   <Badge className={
-                    incident.source === 'crash'
+                    incident.type === 'crash'
                       ? 'bg-red-100 text-red-700'
                       : 'bg-purple-100 text-purple-700'
                   }>
-                    {incident.source === 'crash' ? '💥 Crash' : '🚨 Alert'}
+                    {incident.type === 'crash' ? '💥 Crash' : '🚨 Alert'}
                   </Badge>
 
                   <div className="flex gap-1 capitalize">
@@ -56,7 +56,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                       {incident.status}
                     </Badge>
 
-                    {incident.source === 'alert' && incident.data?.severity && (
+                    {incident.type === 'alert' && incident.data?.severity && (
                       <Badge className={
                         incident.data.severity === 'critical' ? 'bg-red-500 text-white' :
                         incident.data.severity === 'high'     ? 'bg-orange-500 text-white' :
@@ -84,7 +84,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground capitalize">
                     <AlertCircle size={12} />
-                    {incident.source === 'alert'
+                    {incident.type === 'alert'
                       ? incident.data?.alert_type?.replace('_', ' ')
                       : `Impact: ${incident.data?.impact_force ?? 'N/A'}g`}
                   </div>

@@ -13,12 +13,13 @@ export const crashAPI = {
 
   
   assign: async (id, vehicle_id, responder_id) => {
-    const response = await api.patch(`/crash/${id}/assign`, {  // ← /assign added
+    const response = await api.patch(`/crash/${id}/assign`, {
       vehicle_id,
       responder_id,
       status: 'responding',
     });
-    return response.data;  // ← backend returns the object directly, not wrapped in .event
+     console.log("FULL BACKEND RESPONSE:", response.data);
+    return response.data;
   },
 
   patch: async (id, updates) => {

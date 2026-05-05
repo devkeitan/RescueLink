@@ -8,11 +8,10 @@ export default function AlertFlashOverlay({ alert, onDismiss}) {
   const isVisible = !!alert; // Show if alert exists
 
 
-  // Auto-dismiss after 6 seconds
-  useEffect(() => {
 
-    
-if (!alert) return; //remove forcelater
+
+  useEffect(() => {
+if (!alert) return;
     const timer = setTimeout(onDismiss, 5000);
     return () => clearTimeout(timer);
   }, [alert, onDismiss]);

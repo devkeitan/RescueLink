@@ -8,19 +8,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Eye, CheckCircle, Pin, MoreHorizontal } from "lucide-react";
 
+
 export const createColumns = (onView, onStatusChange, onAssign, onDelete, onViewOnMap) => [
   {
-    accessorKey: "user ",
+    accessorKey: "user",
     header: "USER",
     cell: ({ row }) => {
       const user = row.original.data?.user;
       return (
         <div>
           <div className="font-medium text-sm">
-            {user ? `${user.first_name} ${user.last_name}` : 'Unknown User'}
+            {user ? `${user.first_name} ${user.last_name}` : "Unknown User"}
           </div>
           <div className="text-xs text-muted-foreground">
-            {user?.email || 'N/A'}
+            {user?.email || "N/A"}
           </div>
         </div>
       );
@@ -30,16 +31,16 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
     id: "incident",
     header: "INCIDENT",
     cell: ({ row }) => {
-      const { source, data } = row.original;
+      const { type, data } = row.original;
       return (
         <div>
           <div className="text-sm font-medium">
-            {source === 'alert' ? data.title : data.event_type}
+            {type === "alert" ? data.title : data.event_type}
           </div>
           <div className="text-xs text-muted-foreground line-clamp-1">
-            {source === 'alert'
-              ? (data.description || 'No description')
-              : `Impact: ${data.impact_force ?? 'N/A'}g`}
+            {type === "alert"
+              ? data.description || "No description"
+              : `Impact: ${data.impact_force ?? "N/A"}g`}
           </div>
         </div>
       );
@@ -49,15 +50,16 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
     id: "location",
     header: "LOCATION",
     cell: ({ row }) => {
-      const { source, data } = row.original;
+      const { type, data } = row.original;
       return (
         <div>
           <div className="text-sm font-medium">
-            {source === 'alert' ? data.location : 'GPS Detected'}
+            {type === "alert" ? data.location : "GPS Detected"}
           </div>
           {data.latitude && data.longitude && (
             <div className="text-xs text-muted-foreground">
-              {parseFloat(data.latitude).toFixed(4)}, {parseFloat(data.longitude).toFixed(4)}
+              {parseFloat(data.latitude).toFixed(4)},{" "}
+              {parseFloat(data.longitude).toFixed(4)}
             </div>
           )}
         </div>
@@ -70,76 +72,85 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
     cell: ({ row }) => {
       const status = row.original.status;
       const variantMap = {
-        pending: "bg-orange-100 text-orange-700",
+        pending:    "bg-orange-100 text-orange-700",
         responding: "bg-blue-100 text-blue-700",
-        resolved: "bg-green-100 text-green-700",
-        cancelled: "bg-gray-100 text-gray-700",
+        resolved:   "bg-green-100 text-green-700",
+        cancelled:  "bg-gray-100 text-gray-700",
       };
       return (
-        <Badge className={`font-medium ${variantMap[status] || 'bg-gray-100 text-gray-700'}`}>
+        <Badge className={`font-medium ${variantMap[status] || "bg-gray-100 text-gray-700"}`}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </Badge>
       );
     },
   },
-{
-  id: "type",
-  header: "TYPE",
-  filterFn: (row, columnId, filterValue) => {
-    if (!filterValue) return true;
-    // Match by source (alert/crash)
-    if (filterValue === 'alert' || filterValue === 'crash') {
-      return row.original.source === filterValue;
-    }
-    // Match by alert_type (medical, fire, etc.)
-    return row.original.data?.alert_type === filterValue;
+  {
+    id: "type",
+    header: "TYPE",
+    filterFn: (row, columnId, filterValue) => {
+      if (!filterValue) return true;
+      // Match by type (alert/crash)
+      if (filterValue === "alert" || filterValue === "crash") {
+        return row.original.type === filterValue;
+      }
+      // Match by alert_type (medical, fire, etc.)
+      return row.original.data?.alert_type === filterValue;
+    },
+    cell: ({ row }) => {
+      const { type } = row.original;
+      return (
+        <div className="space-y-1">
+          <Badge
+            className={
+              type === "alert"
+                ? "bg-purple-100 text-purple-700"
+                : "bg-red-100 text-red-700"
+            }
+          >
+            {type === "alert" ? "Alert" : "Crash"}
+          </Badge>
+        </div>
+      );
+    },
   },
-  cell: ({ row }) => {
-    const { source, data } = row.original;
-    return (
-      <div className="space-y-1">
-        <Badge className={source === 'alert'
-          ? 'bg-purple-100 text-purple-700'
-          : 'bg-red-100 text-red-700'}>
-          {source === 'alert' ? 'Alert' : 'Crash'}
-        </Badge>
-       
-      </div>
-    );
-  },
-},
-{
-  id: "severity",
-  header: "SEVERITY",
-  filterFn: (row, columnId, filterValue) => {
-    if (!filterValue) return true;
-    return row.original.data?.severity === filterValue;
-  },
-  cell: ({ row }) => {
-    const { source, data } = row.original;
-    if (source === 'crash') {
-      return <span className="text-xs text-muted-foreground">N/A</span>;
-    }
-    const variantMap = {
-      critical: "bg-red-100 text-red-700",
-      high: "bg-orange-100 text-orange-700",
-      medium: "bg-yellow-100 text-yellow-700",
-      low: "bg-blue-100 text-blue-700",
-    };
-    return (
-      <Badge className={`font-medium capitalize ${variantMap[data.severity]}`}>
-        {data.severity}
-      </Badge>
-    );
-  },
-},
+  {
+    id: "severity",
+    header: "SEVERITY",
+    filterFn: (row, columnId, filterValue) => {
+      if (!filterValue) return true;
+      return row.original.data?.severity === filterValue;
+    },
+cell: ({ row }) => {
+  const { type, data } = row.original;
 
+  const variantMap = {
+    critical: "bg-red-100 text-red-700",
+    high:     "bg-orange-100 text-orange-700",
+    medium:   "bg-yellow-100 text-yellow-700",
+    low:      "bg-blue-100 text-blue-700",
+  };
+
+  // Show N/A only if severity is actually missing
+  if (!data.severity) {
+    return <span className="text-xs text-muted-foreground">N/A</span>;
+  }
+
+  return (
+    <Badge
+      className={`font-medium capitalize ${
+        variantMap[data.severity] || "bg-gray-100 text-gray-700"
+      }`}
+    >
+      {data.severity}
+    </Badge>
+  );
+},
+  },
   {
     id: "actions",
     header: "ACTIONS",
     cell: ({ row }) => {
       const incident = row.original;
-      const rawData = incident.data;
 
       return (
         <div className="flex items-center gap-1">
@@ -155,7 +166,7 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
             <Button
               variant="ghost" size="icon" className="h-8 w-8"
               title="Mark as Responding"
-              onClick={() => onStatusChange(incident, 'responding')}
+              onClick={() => onStatusChange(incident, "responding")}
             >
               <CheckCircle className="h-4 w-4" />
             </Button>
@@ -166,7 +177,7 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
               variant="ghost" size="icon"
               className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               title="View on Map"
-              onClick={() => onViewOnMap(rawData)}
+              onClick={() => onViewOnMap(incident)}
             >
               <Pin className="h-4 w-4" />
             </Button>
@@ -187,13 +198,13 @@ export const createColumns = (onView, onStatusChange, onAssign, onDelete, onView
                   View on Map
                 </DropdownMenuItem>
               )}
-              {incident.status !== 'resolved' && (
-                <DropdownMenuItem onClick={() => onStatusChange(incident, 'resolved')}>
+              {incident.status !== "resolved" && (
+                <DropdownMenuItem onClick={() => onStatusChange(incident, "resolved")}>
                   Mark as Resolved
                 </DropdownMenuItem>
               )}
-              {incident.status !== 'cancelled' && (
-                <DropdownMenuItem onClick={() => onStatusChange(incident, 'cancelled')}>
+              {incident.status !== "cancelled" && (
+                <DropdownMenuItem onClick={() => onStatusChange(incident, "cancelled")}>
                   Cancel Incident
                 </DropdownMenuItem>
               )}

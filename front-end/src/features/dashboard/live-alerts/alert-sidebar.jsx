@@ -23,7 +23,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
           <div className="space-y-2">
             {activeIncidents.map((incident) => (
               <div
-                key={`${incident.source}-${incident.id}`}
+                key={`${incident.type}-${incident.id}`}
                 onClick={() => onAlertSelect(incident)}
                 className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all ${
                   incident.type === 'crash'
@@ -35,7 +35,7 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                     : 'hover:bg-muted'
                 }`}
               >
-                {/* Source + Status + Severity */}
+                {/* type + Status + Severity */}
                 <div className="flex justify-between gap-2 mb-2 flex-wrap">
                   <Badge className={
                     incident.type === 'crash'
@@ -56,12 +56,13 @@ export default function AlertSidebar({ alerts, selectedAlert, onAlertSelect, onV
                       {incident.status}
                     </Badge>
 
-                    {incident.type === 'alert' && incident.data?.severity && (
+{incident.data?.severity && (
                       <Badge className={
                         incident.data.severity === 'critical' ? 'bg-red-500 text-white' :
                         incident.data.severity === 'high'     ? 'bg-orange-500 text-white' :
                         incident.data.severity === 'medium'   ? 'bg-yellow-500 text-white' :
-                                                                 'bg-blue-500 text-white'
+                        incident.data.severity === 'low'      ? 'bg-blue-500 text-white' :
+                                            'bg-gray-500 text-white'
                       }>
                         {incident.data.severity}
                       </Badge>

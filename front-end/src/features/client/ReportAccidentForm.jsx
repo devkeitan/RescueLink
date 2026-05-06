@@ -281,8 +281,7 @@ const handleSubmit = async (e) => {
     }
 
     // Build title
-    const title = formData.title ||
-      `${formData.accident_type} - ${formData.location.substring(0, 50)}`;
+    const title = formData.title || formData.accident_type;
 
     // Build description
     const descriptionParts = [];

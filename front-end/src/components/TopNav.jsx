@@ -2,7 +2,7 @@ import { Bell, User, AlertTriangle, Menu } from 'lucide-react';
 
 export function TopNav({ onMenuClick }) {
   return (
-  <nav className="bg-white border-b border-gray-200 z-[60] h-16">
+  <nav className="bg-white border-b border-gray-200 z-[10] h-16">
       <div className="flex items-center justify-between px-4 h-full">
         <div className="flex items-center gap-4">
           <button 

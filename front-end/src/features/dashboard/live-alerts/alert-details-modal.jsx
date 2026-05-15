@@ -17,11 +17,22 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
   const canAssign = ['admin', 'responder'].includes(user?.role);
 
  const isCrash = incident.type === 'crash';
+const isBle = incident.type === 'ble';
+const isAlert = incident.type === 'alert';
+
   const data = incident.data || incident;
   const currentStatus = incident.status ?? data.status;
 
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [message, setMessage] = useState(null);
+   // Derive current assignments from incident data
+  const currentResponderAssignment = isBle
+  ? (data.responder_assignments?.find(a => !a.unassigned_at && a.status !== 'resolved') ?? null)
+  : data.responder ? { responder: data.responder } : null;
+
+const currentVehicleAssignment = isBle
+  ? (data.vehicle_assignments?.find(a => !a.unassigned_at) ?? null)
+  : data.vehicle ? { vehicle: data.vehicle } : null;
   const [imageEnlarged, setImageEnlarged] = useState(false);
 
   const severityColors = {
@@ -44,47 +55,59 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isCrash ? '💥 Crash Event Details' : '🚨 Alert Details'}
-            </DialogTitle>
+  {isCrash ? '💥 Crash Event Details' : isBle ? '📍 BLE Incident Details' : '🚨 Alert Details'}
+</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
 
             {/* Badges */}
-            <div className="flex flex-wrap gap-3 capitalize justify-center">
-              <Badge className={isCrash
-                ? 'bg-red-100 text-red-700 border-red-200 px-4 py-2'
-                : 'bg-purple-100 text-purple-700 border-purple-200 px-4 py-2'}>
-                {isCrash ? '💥 Auto Crash' : '🚨 Manual Alert'}
-              </Badge>
-              {!isCrash && data.severity && (
-                <Badge className={`px-4 py-2 ${severityColors[data.severity]}`}>
-                  {data.severity} Severity
-                </Badge>
-              )}
-              <Badge className={`px-4 py-2 ${statusColors[currentStatus]}`}>
-                {currentStatus}
-              </Badge>
-              {!isCrash && data.alert_type && (
-                <Badge variant="secondary" className="px-4 py-2 capitalize">
-                  {data.alert_type.replace('_', ' ')}
-                </Badge>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-3 capitalize justify-center">
+  <Badge className={
+    isCrash
+      ? 'bg-red-100 text-red-700 border-red-200 px-4 py-2'
+      : isAlert
+      ? 'bg-purple-100 text-purple-700 border-purple-200 px-4 py-2'
+      : 'bg-amber-100 text-amber-700 border-amber-200 px-4 py-2'
+  }>
+    {isCrash ? '💥 Auto Crash' : isAlert ? '🚨 Manual Alert' : '📍 BLE'}
+  </Badge>
+
+  {isAlert && data.severity && (
+    <Badge className={`px-4 py-2 ${severityColors[data.severity]}`}>
+      {data.severity} Severity
+    </Badge>
+  )}
+
+  <Badge className={`px-4 py-2 ${statusColors[currentStatus] || 'bg-gray-100 text-gray-700'}`}>
+    {currentStatus}
+  </Badge>
+
+  {isAlert && data.alert_type && (
+    <Badge variant="secondary" className="px-4 py-2 capitalize">
+      {data.alert_type.replace('_', ' ')}
+    </Badge>
+  )}
+</div>
 
             {/* Title */}
-            <div>
-              <h3 className="font-semibold text-lg">
-                {isCrash
-                  ? `Crash Detection #${data.id}`
-                  : (data.title || `${data.alert_type} Alert`)}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                {isCrash
-                  ? `Impact: ${data.impact_force ?? 'N/A'}g · Battery: ${data.device_battery ?? 'N/A'}% · Network: ${data.network_type ?? 'N/A'}`
-                  : (data.description || 'No description available')}
-              </p>
-            </div>
+           <div>
+  <h3 className="font-semibold text-lg">
+    {isCrash
+      ? `Crash Detection #${data.id}`
+      : isAlert
+      ? (data.title || `${data.alert_type} Alert`)
+      : `BLE Emergency #${data.id}`}
+  </h3>
+
+  <p className="text-sm text-muted-foreground mt-2">
+    {isCrash
+      ? `Impact: ${data.impact_force ?? 'N/A'}g · Battery: ${data.device_battery ?? 'N/A'}% · Network: ${data.network_type ?? 'N/A'}`
+      : isAlert
+      ? (data.description || 'No description available')
+      : `Device ID: ${data.device_id ?? 'N/A'}`}
+  </p>
+</div>
 
 
             {/* User Info */}
@@ -101,9 +124,18 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
                   <Info icon={<Phone size={18} />} label="Phone">
                     {data.user?.user_phone_number || 'N/A'}
                   </Info>
-                  <Info icon={<Clock size={18} />} label={isCrash ? 'Triggered At' : 'Alert Time'}>
-                    {new Date(data.triggered_at || data.reported_at).toLocaleString()}
-                  </Info>
+                  <Info
+  icon={<Clock size={18} />}
+  label={isCrash ? 'Triggered At' : isAlert ? 'Alert Time' : 'BLE Time'}
+>
+  {isBle
+    ? new Date((data.timestamp || 0) * 1000).toLocaleString('en-PH', {
+        timeZone: 'Asia/Manila'
+      })
+    : new Date(data.triggered_at || data.reported_at).toLocaleString('en-PH', {
+        timeZone: 'Asia/Manila'
+      })}
+</Info>
                 </div>
               </CardContent>
             </Card>
@@ -144,39 +176,48 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
 
 
 
-            {/* Current Assignment — both alerts AND crashes */}
-            {(data.vehicle || data.responder) && (
-              <Card className="bg-green-50/50 border-green-200 py-0">
-                <CardContent className="p-4 space-y-3">
-                  <h3 className="font-semibold text-green-800">Current Assignment</h3>
-                  {data.responder && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <User size={16} className="text-green-600" />
-                      <span>
-                        <strong>Responder:</strong> {data.responder.first_name} {data.responder.last_name}
-                        {data.responder.user_phone_number && ` — ${data.responder.user_phone_number}`}
-                      </span>
-                    </div>
-                  )}
-                  {data.vehicle && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Truck size={16} className="text-blue-600" />
-                      <span>
-                        <strong>Vehicle:</strong> {data.vehicle.license_plate} — {data.vehicle.vehicle_type}
-                        {data.vehicle.model && ` (${data.vehicle.model})`}
-                        <Badge className={`ml-2 text-xs ${
-                          data.vehicle.status === 'available'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {data.vehicle.status}
-                        </Badge>
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+{(currentResponderAssignment || currentVehicleAssignment) && (
+  <Card className="bg-green-50/50 border-green-200 py-0">
+    <CardContent className="p-4 space-y-3">
+      <h3 className="font-semibold text-green-800">Current Assignment</h3>
+
+      {currentResponderAssignment?.responder && (
+        <div className="flex items-center gap-2 text-sm">
+          <User size={16} className="text-green-600" />
+          <span>
+            <strong>Responder:</strong> {currentResponderAssignment.responder.first_name}{' '}
+            {currentResponderAssignment.responder.last_name}
+            {currentResponderAssignment.responder.user_phone_number &&
+              ` — ${currentResponderAssignment.responder.user_phone_number}`}
+          </span>
+        </div>
+      )}
+
+      {currentVehicleAssignment?.vehicle && (
+        <div className="flex items-center gap-2 text-sm">
+          <Truck size={16} className="text-blue-600" />
+          <span>
+            <strong>Vehicle:</strong>{' '}
+            {currentVehicleAssignment.vehicle.license_plate ||
+              currentVehicleAssignment.vehicle.plate_number ||
+              'No plate'}
+            {currentVehicleAssignment.vehicle.vehicle_type &&
+              ` — ${currentVehicleAssignment.vehicle.vehicle_type}`}
+            {currentVehicleAssignment.vehicle.model &&
+              ` (${currentVehicleAssignment.vehicle.model})`}
+            <Badge className={`ml-2 text-xs ${
+              currentVehicleAssignment.vehicle.status === 'available'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-blue-100 text-blue-700'
+            }`}>
+              {currentVehicleAssignment.vehicle.status}
+            </Badge>
+          </span>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+)}
 
             {/* Crash Sensor Data */}
             {isCrash && (
@@ -224,7 +265,11 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
                   variant="secondary"
                 >
                   <Truck size={18} className="mr-2" />
-                  {data.responder || data.vehicle ? 'Reassign Responder' : 'Assign Responder'}
+                  {(isBle
+  ? (currentResponderAssignment || currentVehicleAssignment)
+  : (data.responder || data.vehicle))
+  ? 'Reassign Responder'
+  : 'Assign Responder'}
                 </Button>
               )}
             </div>
@@ -235,15 +280,16 @@ export default function AlertDetailsModal({ open, onOpenChange, alert: incident,
      
       {/* Assign Responder Modal — both alerts AND crashes */}
       <AssignResponderModal
-        open={assignModalOpen}
-        onOpenChange={setAssignModalOpen}
-        alert={incident}
-        isCrash={isCrash}
-        onAssigned={(updated) => {
-          onUpdateAlert(updated);
-          setAssignModalOpen(false);
-        }}
-      />
+  open={assignModalOpen}
+  onOpenChange={setAssignModalOpen}
+  alert={incident}
+  isCrash={isCrash}
+  isBle={isBle}
+  onAssigned={(updated) => {
+    onUpdateAlert(updated);
+    setAssignModalOpen(false);
+  }}
+/>
        {/* Lightbox */}
 
 {imageEnlarged && createPortal(

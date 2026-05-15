@@ -6,6 +6,11 @@ export const crashAPI = {
     return response.data;
   },
 
+    getById: async (id) => {
+    const res = await api.get(`/crash/${id}`);
+    return res.data.data;
+  },
+
   updateStatus: async (id, status) => {
     const response = await api.patch(`/crash/${id}/status`, { status });
     return response.data;

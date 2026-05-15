@@ -14,7 +14,8 @@ import { allAlertsAPI } from "@/api/allAlerts";
 import { useNavigate } from "react-router-dom";
 import { crashAPI } from "@/api/crash";
 import { socket } from "@/lib/socket";
-import AlertDetailsModal from "../dashboard/live-alerts/alert-details-modal";
+import { bleAPI } from "@/api/ble";
+import IncidentDetailPanel from "../dashboard/live-alerts/IncidentDetailPanel";
 
 
 const normalizeAlert = (alert) => ({
@@ -39,6 +40,16 @@ const normalizeCrash = (crash) => ({
   data: crash,
 });
 
+const normalizeBle = (ble) => ({
+  type: "ble",
+  id: ble.id,
+  userId: ble.user_id,
+  status: ble.status,
+  timestamp: new Date((ble.timestamp || 0) * 1000).toISOString(),
+  latitude: ble.latitude,
+  longitude: ble.longitude,
+  data: ble,
+});
 
 export default function AlertsTable({ statusFilter }) {
   const [incidents, setIncidents] = useState([]);
@@ -91,6 +102,28 @@ export default function AlertsTable({ statusFilter }) {
       ));
     }
 
+    function onNewBle(newBle) {
+  setIncidents((prev) => [normalizeBle(newBle), ...prev]);
+}
+
+function onBleUpdated(updated) {
+  setIncidents((prev) =>
+    prev.map((i) =>
+      i.type === "ble" && i.id === updated.id ? normalizeBle(updated) : i
+    )
+  );
+}
+
+function onBleAssigned(updated) {
+  setIncidents((prev) =>
+    prev.map((i) =>
+      i.type === "ble" && i.id === updated.id ? normalizeBle(updated) : i
+    )
+  );
+}
+
+
+
     socket.on("alert:new", onNewAlert);
     socket.on("alert:updated", onUpdatedAlert);
     socket.on("alert:status_updated", onStatusUpdated);
@@ -99,7 +132,11 @@ export default function AlertsTable({ statusFilter }) {
     socket.on("crash:new", onNewCrash);
     socket.on("crash:updated", onCrashUpdated);
     socket.on("crash:assigned", onCrashAssigned);
+    socket.on("ble:new", onNewBle);
+socket.on("ble:updated", onBleUpdated);
+socket.on("ble:assigned", onBleAssigned);
 
+    
     return () => {
       socket.off("alert:new", onNewAlert);
       socket.off("alert:updated", onUpdatedAlert);
@@ -109,6 +146,9 @@ export default function AlertsTable({ statusFilter }) {
       socket.off("crash:new", onNewCrash);
       socket.off("crash:updated", onCrashUpdated);
       socket.off("crash:assigned", onCrashAssigned);
+      socket.off("ble:new", onNewBle);
+socket.off("ble:updated", onBleUpdated);
+socket.off("ble:assigned", onBleAssigned);
     };
   }, []);
 
@@ -135,109 +175,163 @@ export default function AlertsTable({ statusFilter }) {
   }, [incidents, statusFilter]);
 
   // ── Handlers ───────────────────────────────────────────────
-  const handleView = useCallback(async (incident) => {
-    try {
-      if (incident.type === "alert") {
-        const data = await alertsAPI.getById(incident.id);
-        setSelectedAlert(normalizeAlert(data));
-      } else {
-        // Fetch fresh crash data too for consistency
-        setSelectedAlert(normalizeCrash(incident.data));
-      }
-      setViewOpen(true);
-    } catch (error) {
-      Swal.fire({
-        icon: "error", title: "Failed to Load",
-        text: error?.message || "Could not fetch details",
-        confirmButtonColor: "#dc2626",
-      });
+const handleView = useCallback(async (incident) => {
+  try {
+    if (incident.type === "alert") {
+      const data = await alertsAPI.getById(incident.id);
+      setSelectedAlert(normalizeAlert(data));
+    } else if (incident.type === "crash") {
+      // Skip re-fetch, use existing data from the list
+      setSelectedAlert(incident);
+    } else if (incident.type === "ble") {
+      const data = await bleAPI.getById(incident.id);
+      setSelectedAlert(normalizeBle(data));
     }
-  }, []);
+    setViewOpen(true);
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Failed to Load",
+      text: error?.message || "Could not fetch details",
+      confirmButtonColor: "#dc2626",
+    });
+  }
+}, []);
 
-  const handleUpdateAlert = useCallback((updatedIncident) => {
-    // Check if already normalized (has .type field from our normalize functions)
-    if (updatedIncident.type === "alert" || updatedIncident.type === "crash") {
-      setIncidents(prev => prev.map(i =>
+const handleUpdateAlert = useCallback((updatedIncident) => {
+  if (
+    updatedIncident.type === "alert" ||
+    updatedIncident.type === "crash" ||
+    updatedIncident.type === "ble"
+  ) {
+    setIncidents((prev) =>
+      prev.map((i) =>
         i.type === updatedIncident.type && i.id === updatedIncident.id
           ? updatedIncident
           : i
-      ));
-      setSelectedAlert(updatedIncident);
-      return;
-    }
+      )
+    );
+    setSelectedAlert(updatedIncident);
+    return;
+  }
 
-    // Not normalized — detect by crash-specific fields
-    const isCrash = !!updatedIncident.triggered_at || !!updatedIncident.event_type;
-    const normalized = isCrash
-      ? normalizeCrash(updatedIncident)
-      : normalizeAlert(updatedIncident);
+  const isCrash = !!updatedIncident.triggered_at || !!updatedIncident.event_type;
+  const isBle = !!updatedIncident.device_id && updatedIncident.timestamp != null;
 
-    setIncidents(prev => prev.map(i =>
+  const normalized = isCrash
+    ? normalizeCrash(updatedIncident)
+    : isBle
+    ? normalizeBle(updatedIncident)
+    : normalizeAlert(updatedIncident);
+
+  setIncidents((prev) =>
+    prev.map((i) =>
       i.type === normalized.type && i.id === normalized.id ? normalized : i
-    ));
-    setSelectedAlert(normalized);
-  }, []);
+    )
+  );
+  setSelectedAlert(normalized);
+}, []);
 
   const handleViewOnMap = useCallback((rawData) => {
     navigate("/map", { state: { selectedAlert: rawData } });
   }, [navigate]);
 
   const handleStatusChange = useCallback(async (incident, newStatus) => {
-    try {
-      let updated;
-      if (incident.type === "crash") {
-        updated = await crashAPI.updateStatus(incident.id, newStatus);
-        setIncidents(prev => prev.map(i =>
-          i.type === "crash" && i.id === updated.id ? normalizeCrash(updated) : i
-        ));
-      } else {
-        updated = await alertsAPI.updateStatus(incident.id, newStatus);
-        setIncidents(prev => prev.map(i =>
-          i.type === "alert" && i.id === updated.id ? normalizeAlert(updated) : i
-        ));
-      }
-      Swal.fire({
-        icon: "success", title: "Status Updated!",
-        text: `Marked as ${newStatus}`,
-        timer: 1500, showConfirmButton: false,
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error", title: "Update Failed",
-        text: error?.message || "Could not update status",
-        confirmButtonColor: "#dc2626",
-      });
-    }
-  }, []);
+  try {
+    let updated;
 
-  const handleAssign = useCallback(async (incident, vehicle_id, responder_id) => {
-    try {
-      let updated;
-      if (incident.type === "crash") {
-        updated = await crashAPI.assign(incident.id, vehicle_id, responder_id);
-        setIncidents(prev => prev.map(i =>
+    if (incident.type === "crash") {
+      updated = await crashAPI.updateStatus(incident.id, newStatus);
+      setIncidents((prev) =>
+        prev.map((i) =>
           i.type === "crash" && i.id === updated.id ? normalizeCrash(updated) : i
-        ));
-      } else {
-        updated = await alertsAPI.assign(incident.id, vehicle_id, responder_id);
-        setIncidents(prev => prev.map(i =>
+        )
+      );
+    } else if (incident.type === "ble") {
+      updated = await bleAPI.updateStatus(incident.id, newStatus);
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.type === "ble" && i.id === updated.id ? normalizeBle(updated) : i
+        )
+      );
+    } else {
+      updated = await alertsAPI.updateStatus(incident.id, newStatus);
+      setIncidents((prev) =>
+        prev.map((i) =>
           i.type === "alert" && i.id === updated.id ? normalizeAlert(updated) : i
-        ));
-      }
-      Swal.fire({
-        icon: "success", title: "Assigned!",
-        text: "Responder and vehicle assigned successfully",
-        timer: 1500, showConfirmButton: false,
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error", title: "Assignment Failed",
-        text: error?.message || "Could not assign responder",
-        confirmButtonColor: "#dc2626",
-      });
+        )
+      );
     }
-  }, []);
 
+    Swal.fire({
+      icon: "success",
+      title: "Status Updated!",
+      text: `Marked as ${newStatus}`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Update Failed",
+      text: error?.message || "Could not update status",
+      confirmButtonColor: "#dc2626",
+    });
+  }
+}, []);
+
+const handleAssign = useCallback(async (incident, vehicle_id, responder_id) => {
+  try {
+    let updated;
+
+    if (incident.type === "crash") {
+      updated = await crashAPI.assign(incident.id, vehicle_id, responder_id);
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.type === "crash" && i.id === updated.id ? normalizeCrash(updated) : i
+        )
+      );
+    } else if (incident.type === "ble") {
+      if (responder_id) {
+        await bleAPI.assignResponders(incident.id, [responder_id]);
+      }
+      if (vehicle_id) {
+        await bleAPI.assignVehicles(incident.id, [vehicle_id]);
+      }
+
+      const freshBle = await bleAPI.getById(incident.id);
+      updated = normalizeBle(freshBle);
+
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.type === "ble" && i.id === updated.id ? updated : i
+        )
+      );
+    } else {
+      updated = await alertsAPI.assign(incident.id, vehicle_id, responder_id);
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.type === "alert" && i.id === updated.id ? normalizeAlert(updated) : i
+        )
+      );
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Assigned!",
+      text: "Responder and vehicle assigned successfully",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Assignment Failed",
+      text: error?.message || "Could not assign responder",
+      confirmButtonColor: "#dc2626",
+    });
+  }
+}, []);
   const handleDelete = useCallback((rawData) => setDeleteAlert(rawData), []);
 
   const handleDeleteConfirm = async () => {
@@ -276,24 +370,36 @@ export default function AlertsTable({ statusFilter }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Incident Management</h1>
-          <p className="text-gray-600 mt-1">Monitor and respond to alerts and crash detections</p>
-        </div>
+  <div className="space-y-4">
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Incident Management</h1>
+        <p className="text-gray-600 mt-1">Monitor and respond to alerts and crash detections</p>
       </div>
+    </div>
 
-      <DataTable columns={columns} data={filteredIncidents} hideStatusFilter={!!statusFilter} />
+    {/* ── Table — always full width, never shrinks ── */}
+    <DataTable columns={columns} data={filteredIncidents} hideStatusFilter={!!statusFilter} />
 
-      {/* ── Alert Details Modal ──────────────────────────────── */}
-      <AlertDetailsModal
-        open={viewOpen}
-        onOpenChange={setViewOpen}
-        alert={selectedAlert}
-        onUpdateAlert={handleUpdateAlert}
-      />
+    {/* ── Overlay when panel is open ── */}
+    {selectedAlert && (
+      <>
+        {/* Blurred backdrop — clicking it closes the panel */}
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+          onClick={() => setSelectedAlert(null)}
+        />
 
+        {/* Detail panel — anchored to the right */}
+        <div className="fixed top-0 right-0 h-full w-[420px] z-50 shadow-2xl">
+          <IncidentDetailPanel
+            incident={selectedAlert}
+            onClose={() => setSelectedAlert(null)}
+            onUpdateAlert={handleUpdateAlert}
+          />
+        </div>
+      </>
+    )}
       {/* ── Delete Confirmation ─────────────────────────────── */}
       <AlertDialog open={!!deleteAlert} onOpenChange={(open) => !open && setDeleteAlert(null)}>
         <AlertDialogContent>

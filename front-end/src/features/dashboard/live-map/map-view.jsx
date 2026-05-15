@@ -175,7 +175,6 @@ function AccidentMap({ alerts = [], filters = {}, selectedAlert = null, onMarker
         )}
       </div>
 
-      <MapLegend />
 
       <MapContainer
         center={MAP_CENTER}

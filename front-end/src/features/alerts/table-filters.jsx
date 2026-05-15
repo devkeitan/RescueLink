@@ -7,15 +7,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-
-export default function TableFilters({ table, hideStatusFilter, globalFilter, setGlobalFilter }) {
+export default function TableFilters({
+  table,
+  hideStatusFilter,
+  globalFilter,
+  setGlobalFilter,
+}) {
   return (
     <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border">
-
       {/* Global Search */}
       <Input
         placeholder="Search anything..."
-        value={globalFilter ?? ''}
+        value={globalFilter ?? ""}
         onChange={(e) => setGlobalFilter(e.target.value)}
         className="flex-1 min-w-[200px] focus-visible:ring-2 focus-visible:ring-red-500"
       />
@@ -34,6 +37,7 @@ export default function TableFilters({ table, hideStatusFilter, globalFilter, se
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="assigned">Assigned</SelectItem>
             <SelectItem value="responding">Responding</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -74,10 +78,9 @@ export default function TableFilters({ table, hideStatusFilter, globalFilter, se
           <SelectItem value="all">All Types</SelectItem>
           <SelectItem value="alert">Manual Alert</SelectItem>
           <SelectItem value="crash">Crash Detected</SelectItem>
-         
+          <SelectItem value="ble">BLE Emergency</SelectItem>
         </SelectContent>
       </Select>
-
     </div>
   );
 }

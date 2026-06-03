@@ -29,6 +29,17 @@ const normalizeCrash = (crash) => ({
   data: crash,
 });
 
+const normalizeBle = (ble) => ({
+  type: 'ble',
+  id: ble.id,
+  userId: ble.user_id,
+  status: ble.status,
+  timestamp: ble.timestamp,
+  latitude: ble.latitude,
+  longitude: ble.longitude,
+  data: ble,
+});
+
 
 const LiveMap = () => {
   const location = useLocation();
@@ -111,6 +122,23 @@ const LiveMap = () => {
       setDetailsAlert(prev => prev?.type === 'crash' && prev.id === updated.id ? normalized : prev);
     }
 
+    // ── BLE listeners ──
+function onNewBle(newBle) {
+  setAlerts(prev => [normalizeBle(newBle), ...prev]);
+}
+function onBleUpdated(updated) {
+  const normalized = normalizeBle(updated);
+  setAlerts(prev => prev.map(a =>
+    a.type === 'ble' && a.id === updated.id ? normalized : a
+  ));
+  setSelectedAlert(prev =>
+    prev?.type === 'ble' && prev.id === updated.id ? normalized : prev
+  );
+  setDetailsAlert(prev =>
+    prev?.type === 'ble' && prev.id === updated.id ? normalized : prev
+  );
+}
+
     socket.on('alert:new',            onNewAlert);
     socket.on('alert:status_updated', onAlertStatusUpdated);
     socket.on('alert:assigned',       onAlertAssigned);
@@ -119,6 +147,8 @@ const LiveMap = () => {
     socket.on('crash:new',            onNewCrash);
     socket.on('crash:updated',        onCrashUpdated);
     socket.on('crash:assigned',       onCrashAssigned);
+    socket.on('ble:new',     onNewBle);
+socket.on('ble:updated', onBleUpdated);
 
     return () => {
       socket.off('alert:new',            onNewAlert);
@@ -129,6 +159,8 @@ const LiveMap = () => {
       socket.off('crash:new',            onNewCrash);
       socket.off('crash:updated',        onCrashUpdated);
       socket.off('crash:assigned',       onCrashAssigned);
+      socket.off('ble:new',     onNewBle);
+  socket.off('ble:updated', onBleUpdated);
     };
   }, []);
 

@@ -128,13 +128,11 @@ const currentVehicleAssignment = isBle
   icon={<Clock size={18} />}
   label={isCrash ? 'Triggered At' : isAlert ? 'Alert Time' : 'BLE Time'}
 >
-  {isBle
-    ? new Date((data.timestamp || 0) * 1000).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila'
-      })
-    : new Date(data.triggered_at || data.reported_at).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila'
-      })}
+  {new Date(incident.data?.created_at || incident.created_at || incident.timestamp).toLocaleString('en-PH', {
+  timeZone: 'Asia/Manila',
+  dateStyle: 'medium',
+  timeStyle: 'medium',
+})}
 </Info>
                 </div>
               </CardContent>

@@ -5,8 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 export default function AlertFlashOverlay({ alert, onDismiss}) {
   const shouldReduceMotion = useReducedMotion();
-  const isVisible = !!alert; // Show if alert exists
-
+  const isVisible = !!alert; 
 
 
 

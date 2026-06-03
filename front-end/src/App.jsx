@@ -9,7 +9,7 @@ import AlertFlashOverlay from './components/AlertFlashOverlay';
 
 function AppContent() {
   const [flashAlert, setFlashAlert] = useState(null);
-  const { user, isAuthenticated } = useAuth();   // ✅ now inside AuthProvider
+  const { user, isAuthenticated } = useAuth();   
 
   useEffect(() => {
     socket.connect();
@@ -31,13 +31,26 @@ function AppContent() {
 
       setFlashAlert(newAlert);
     }
+    
+    function onNewCrash(newCrash) {
+      if (newCrash.user_id === user?.id) return;
+      setFlashAlert(newCrash);
+    }
+    function onNewBle(newBle) {
+  if (newBle.user_id === user?.id) return;
+  setFlashAlert(newBle);
+}
 
     socket.on('connect', onConnect);
     socket.on('alert:new', onNewAlert);
+    socket.on('crash:new', onNewCrash);
+ socket.on('ble:new', onNewBle);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('alert:new', onNewAlert);
+       socket.off('crash:new', onNewCrash);
+       socket.off('ble:new', onNewBle);
     };
     }
   }, [user, isAuthenticated]);

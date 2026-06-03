@@ -144,9 +144,11 @@ export default function AlertSidebar({
                   {/* Timestamp */}
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock size={12} />
-                    {new Date(incident.timestamp).toLocaleString('en-PH', {
-                      timeZone: 'Asia/Manila'
-                    })}
+                    {new Date(incident.data?.created_at || incident.created_at || incident.timestamp).toLocaleString('en-PH', {
+  timeZone: 'Asia/Manila',
+  dateStyle: 'medium',
+  timeStyle: 'medium',
+})}
                   </div>
 
                   {/* Incident Details */}
